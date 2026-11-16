@@ -1,0 +1,23 @@
+# DOAX3VR2 payload (needs the PS5 payload SDK: https://github.com/ps5-payload-dev/sdk)
+ifdef PS5_PAYLOAD_SDK
+    include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
+else
+    $(error PS5_PAYLOAD_SDK is undefined)
+endif
+CFLAGS := -O2 -Wall
+ifeq ($(RELEASE),1) # make RELEASE=1: little logging, no debug tools, no test-runner commands
+CFLAGS += -DRELEASE
+endif
+SRCS := main.c pt.c prepare.c selfpager.c fself.c rdna2gcn.c ../common/dump.c
+HDRS := pt.h prepare.h selfpager.h fself.h rdna2gcn.h rdna2gcn_tables.h msgbuf.h camparse.h ../common/firmware.h ../common/dump.h ../common/test.h ../common/camera.h
+
+doax3vr2.elf: $(SRCS) $(HDRS) ../agent/build/agent.elf
+	$(CC) $(CFLAGS) -o $@ $(SRCS) -lkernel_sys -lSceSystemService -lSceUserService
+
+../agent/build/agent.elf: FORCE
+	$(MAKE) -C ../agent RELEASE=$(RELEASE)
+
+FORCE:
+
+clean:
+	rm -f doax3vr2.elf
